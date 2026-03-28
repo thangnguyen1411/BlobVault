@@ -1,18 +1,50 @@
 package com.blobvault;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import com.blobvault.command.*;
+
+import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class Main {
 
-  public static void main(String[] args) {
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    System.out.printf("Hello and welcome!");
+    private static final Map<String, Command> COMMANDS = new LinkedHashMap<>();
 
-    for (int i = 1; i <= 5; i++) {
-      //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-      // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-      System.out.println("i = " + i);
+    static {
+        register(new InitCommand());
+        register(new HashObjectCommand());
+        register(new CatFileCommand());
     }
-  }
+
+    private static void register(Command cmd) {
+        COMMANDS.put(cmd.name(), cmd);
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            printUsage();
+            return;
+        }
+
+        String commandName = args[0];
+        Command command = COMMANDS.get(commandName);
+
+        if (command == null) {
+            System.err.println("Unknown command: " + commandName);
+            printUsage();
+            return;
+        }
+
+        Path cwd = Path.of(System.getProperty("user.dir"));
+        command.execute(cwd, args);
+    }
+
+    private static void printUsage() {
+        System.out.println("Usage: blobvault <command> [args]");
+        System.out.println();
+        System.out.println("Commands:");
+        COMMANDS.values().forEach(cmd ->
+            System.out.printf("  %-30s%n", cmd.usage())
+        );
+    }
 }
