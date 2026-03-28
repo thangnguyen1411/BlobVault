@@ -1,4 +1,4 @@
-package com.blobvault;
+package com.blobvault.storage;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -11,8 +11,8 @@ import java.util.HexFormat;
 public class HashUtil {
 
     /**
-     * Wraps raw content with a Git-style blob header.
-     * Format: "blob <content-length>\0<content>"
+     * Wraps raw content with a Git-style header.
+     * Format: "<type> <content-length>\0<content>"
      *
      * The \0 (null byte) separates the header from the content.
      * This is how Git distinguishes blob objects from tree/commit objects.
@@ -23,15 +23,6 @@ public class HashUtil {
         System.arraycopy(header, 0, result, 0, header.length);
         System.arraycopy(content, 0, result, header.length, content.length);
         return result;
-    }
-
-    /**
-     * Computes the SHA-1 hash of content with a blob header.
-     * Returns the hash as a 40-character hex string (just like Git).
-     */
-    public static String hashBlob(byte[] content) {
-        byte[] wrapped = wrapWithHeader("blob", content);
-        return sha1(wrapped);
     }
 
     /**

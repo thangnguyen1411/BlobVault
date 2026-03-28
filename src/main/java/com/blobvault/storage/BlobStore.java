@@ -1,4 +1,6 @@
-package com.blobvault;
+package com.blobvault.storage;
+
+import com.blobvault.object.ObjectType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,16 +26,16 @@ public class BlobStore {
     }
 
     /**
-     * Stores a blob and returns its SHA-1 hash.
+     * Stores an object and returns its SHA-1 hash.
      *
      * Steps:
-     * 1. Wrap content with "blob <size>\0" header
+     * 1. Wrap content with "<type> <size>\0" header
      * 2. Compute SHA-1 of the wrapped content
      * 3. Compress the wrapped content with zlib
      * 4. Write to objects/<first2>/<rest38>
      */
-    public String store(byte[] content) throws IOException {
-        byte[] wrapped = HashUtil.wrapWithHeader("blob", content);
+    public String store(ObjectType type, byte[] content) throws IOException {
+        byte[] wrapped = HashUtil.wrapWithHeader(type.label(), content);
         String hash = HashUtil.sha1(wrapped);
 
         Path objectPath = objectPath(hash);
@@ -59,7 +61,7 @@ public class BlobStore {
         byte[] compressed = Files.readAllBytes(objectPath);
         byte[] decompressed = decompress(compressed);
 
-        // Skip past the header ("blob <size>\0") to get the raw content
+        // Skip past the header ("<type> <size>\0") to get the raw content
         int nullIndex = findNullByte(decompressed);
         byte[] content = new byte[decompressed.length - nullIndex - 1];
         System.arraycopy(decompressed, nullIndex + 1, content, 0, content.length);

@@ -1,6 +1,6 @@
 package com.blobvault.command;
 
-import com.blobvault.BlobStore;
+import com.blobvault.storage.BlobStore;
 
 import java.nio.file.Path;
 

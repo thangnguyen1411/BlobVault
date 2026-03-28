@@ -14,6 +14,8 @@ public class Main {
         register(new InitCommand());
         register(new HashObjectCommand());
         register(new CatFileCommand());
+        register(new WriteTreeCommand());
+        register(new LsTreeCommand());
     }
 
     private static void register(Command cmd) {

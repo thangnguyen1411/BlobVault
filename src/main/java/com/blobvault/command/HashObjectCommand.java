@@ -1,6 +1,7 @@
 package com.blobvault.command;
 
-import com.blobvault.BlobStore;
+import com.blobvault.object.ObjectType;
+import com.blobvault.storage.BlobStore;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +33,7 @@ public class HashObjectCommand implements Command {
 
         byte[] content = Files.readAllBytes(file);
         BlobStore store = new BlobStore(cwd);
-        String hash = store.store(content);
+        String hash = store.store(ObjectType.BLOB, content);
 
         System.out.println(hash);
     }
