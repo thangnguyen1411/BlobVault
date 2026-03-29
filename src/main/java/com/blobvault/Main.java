@@ -22,6 +22,7 @@ public class Main {
         register(new LogCommand());
         register(new BranchCommand());
         register(new CheckoutCommand());
+        register(new DiffCommand());
     }
 
     private static void register(Command cmd) {
