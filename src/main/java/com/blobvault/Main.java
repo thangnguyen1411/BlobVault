@@ -24,6 +24,8 @@ public class Main {
         register(new CheckoutCommand());
         register(new DiffCommand());
         register(new MergeCommand());
+        register(new ResetCommand());
+        register(new RmCommand());
     }
 
     private static void register(Command cmd) {
