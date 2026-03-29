@@ -19,16 +19,16 @@ import java.util.TreeMap;
  * Equivalent to: git commit -m "message"
  *
  * What happens when you run "blobvault commit -m 'Initial commit'":
+ *   1. Read the index (staged files)
+ *   2. Build a tree object from the index entries
+ *   3. Resolve HEAD to find the parent commit (if any)
+ *   4. Create a commit object pointing to the tree and parent
+ *   5. Store the commit in the object store
+ *   6. Advance the current branch ref to the new commit hash
  *
- *   1. Read the index (staged files)                 (Index)
- *   2. Build a tree from the index entries            (TreeWriter)
- *   3. Read HEAD → find the parent commit             (RefManager)
- *   4. Build the commit object                        (CommitObject + CommitSerializer)
- *   5. Store it in the object store                   (BlobStore)
- *   6. Update the branch to point to this commit      (RefManager)
- *
- * After this, .blobvault/refs/heads/main contains the new commit hash,
- * and the commit itself points back to the previous one — forming the history chain.
+ * After this, the current branch file (e.g., .blobvault/refs/heads/main)
+ * contains the new commit hash, and the commit itself points back to the
+ * previous one — forming the history chain.
  */
 public class CommitCommand implements Command {
 
@@ -40,7 +40,6 @@ public class CommitCommand implements Command {
 
     @Override
     public void execute(Path cwd, String[] args) throws Exception {
-        // --- Parse the -m flag ---
         String message = parseMessage(args);
         if (message == null) {
             System.err.println("Usage: blobvault " + usage());
@@ -49,8 +48,6 @@ public class CommitCommand implements Command {
 
         BlobStore store = new BlobStore(cwd);
         RefManager refs = new RefManager(cwd);
-
-        // --- Step 1: Read the index (what the user staged with "add") ---
         Index index = new Index(cwd);
         TreeMap<String, IndexEntry> entries = index.read();
 
@@ -59,30 +56,26 @@ public class CommitCommand implements Command {
             return;
         }
 
-        // --- Step 2: Build a tree from the index entries ---
+        // Convert the flat index entries into a hierarchical tree object
         String treeHash = TreeWriter.buildTreeFromIndex(entries, store);
         if (treeHash == null) {
             System.err.println("Nothing to commit (empty index)");
             return;
         }
 
-        // --- Step 2: Find the parent commit (if any) ---
+        // First commit has no parents; subsequent commits link back to HEAD
         String parentHash = refs.resolveHead();
         List<String> parents = (parentHash != null) ? List.of(parentHash) : List.of();
 
-        // --- Step 3: Build author/committer lines ---
-        // Format: "Name <email> <unix-timestamp> <timezone>"
-        // Hardcoded for now — Phase 8 could read from a config file
+        // Hardcoded identity — could read from a config file
         long timestamp = Instant.now().getEpochSecond();
         String identity = "BlobVault <blobvault@example.com> " + timestamp + " +0000";
 
-        // --- Step 4: Create, serialize, and store the commit ---
         CommitObject commit = new CommitObject(treeHash, parents, identity, identity, message);
         byte[] commitData = CommitSerializer.serialize(commit);
         String commitHash = store.store(ObjectType.COMMIT, commitData);
 
-        // --- Step 5: Advance the branch pointer ---
-        // e.g., write the new commit hash to .blobvault/refs/heads/main
+        // Advance the branch pointer (e.g., refs/heads/main) to the new commit
         String currentRef = refs.readSymbolicRef();
         refs.updateRef(currentRef, commitHash);
 
@@ -90,8 +83,8 @@ public class CommitCommand implements Command {
     }
 
     /**
-     * Scans args for "-m" and returns the next argument as the message.
-     * Returns null if -m is missing or has no following argument.
+     * Scans args for "-m" and returns the next argument as the commit message.
+     * Returns {@code null} if -m is missing or has no following argument.
      */
     private String parseMessage(String[] args) {
         for (int i = 0; i < args.length - 1; i++) {

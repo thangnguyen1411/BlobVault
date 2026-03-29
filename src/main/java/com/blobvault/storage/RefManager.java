@@ -3,20 +3,15 @@ package com.blobvault.storage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
- * Manages references (refs) — the mutable pointers in BlobVault.
+ * Manages references (refs) — the mutable pointers that track branch tips and HEAD.
  *
- * While the object store is immutable (content-addressed, append-only),
- * refs are the opposite: they're mutable files that point to commit hashes.
- *
- * Key concepts:
- *   HEAD                     → symbolic ref, points to a branch (e.g., "ref: refs/heads/main")
- *   refs/heads/main          → contains the commit hash of the latest commit on "main"
- *   refs/heads/feature       → contains the commit hash of the latest commit on "feature"
- *
- * When you make a new commit, we just overwrite the branch file with the new hash.
- * That's all a branch is — a one-line text file.
+ * Layout:
+ *   .blobvault/HEAD                → symbolic ref (e.g., "ref: refs/heads/main") or raw hash
+ *   .blobvault/refs/heads/{name}   → commit hash for each branch
  */
 public class RefManager {
 
@@ -27,33 +22,27 @@ public class RefManager {
     }
 
     /**
-     * Resolves HEAD to the current commit hash.
-     *
-     * Follows the chain: HEAD → "ref: refs/heads/main" → read that file → commit hash.
-     * Returns null if no commits have been made yet (branch file doesn't exist).
+     * Resolves HEAD to a commit hash.
+     * Follows symbolic refs; returns {@code null} if no commits exist on the current branch.
      */
     public String resolveHead() throws IOException {
         String headContent = Files.readString(blobvaultDir.resolve("HEAD")).trim();
 
-        // HEAD is a symbolic ref like "ref: refs/heads/main"
         if (headContent.startsWith("ref: ")) {
-            String refPath = headContent.substring("ref: ".length());
-            Path refFile = blobvaultDir.resolve(refPath);
-
-            // Branch file doesn't exist yet = no commits on this branch
+            Path refFile = blobvaultDir.resolve(headContent.substring("ref: ".length()));
             if (!Files.exists(refFile)) {
                 return null;
             }
             return Files.readString(refFile).trim();
         }
 
-        // Detached HEAD — raw commit hash (future-proofing for Phase 5)
         return headContent;
     }
 
     /**
-     * Returns the ref path that HEAD points to (e.g., "refs/heads/main").
-     * This tells us which branch we're on.
+     * Returns the full ref path HEAD points to (e.g., "refs/heads/main").
+     *
+     * @throws IllegalStateException if HEAD is detached (contains a raw hash)
      */
     public String readSymbolicRef() throws IOException {
         String headContent = Files.readString(blobvaultDir.resolve("HEAD")).trim();
@@ -66,15 +55,64 @@ public class RefManager {
     }
 
     /**
-     * Updates a ref to point to a new commit hash.
-     * This is what "advances" a branch when you make a new commit.
-     *
-     * Example: updateRef("refs/heads/main", "a1b2c3d4...") writes
-     *          the hash to .blobvault/refs/heads/main
+     * Writes a commit hash to the given ref path (e.g., "refs/heads/main").
+     * Creates parent directories if needed.
      */
     public void updateRef(String refPath, String commitHash) throws IOException {
         Path refFile = blobvaultDir.resolve(refPath);
         Files.createDirectories(refFile.getParent());
         Files.writeString(refFile, commitHash + "\n");
+    }
+
+    /**
+     * Points HEAD at the given branch name by writing a symbolic ref.
+     */
+    public void updateHead(String branchName) throws IOException {
+        Files.writeString(blobvaultDir.resolve("HEAD"), "ref: refs/heads/" + branchName + "\n");
+    }
+
+    /**
+     * Returns the current branch name (e.g., "main"), or {@code null} if HEAD is detached.
+     */
+    public String currentBranch() throws IOException {
+        String headContent = Files.readString(blobvaultDir.resolve("HEAD")).trim();
+        if (headContent.startsWith("ref: refs/heads/")) {
+            return headContent.substring("ref: refs/heads/".length());
+        }
+        return null;
+    }
+
+    /**
+     * Returns all branch names sorted alphabetically, or an empty list if none exist.
+     *
+     * Uses Files.walk (recursive) rather than Files.list (direct children only) so
+     * that slash-namespaced branches like "ntthang/ab-123/fix" are included.
+     * The returned name is the path relative to refs/heads/, e.g. "ntthang/ab-123/fix".
+     */
+    public List<String> listBranches() throws IOException {
+        Path headsDir = blobvaultDir.resolve("refs").resolve("heads");
+        if (!Files.exists(headsDir)) {
+            return List.of();
+        }
+
+        try (Stream<Path> entries = Files.walk(headsDir)) {
+            return entries
+                    .filter(Files::isRegularFile)
+                    .map(p -> headsDir.relativize(p).toString().replace('\\', '/'))
+                    .sorted()
+                    .toList();
+        }
+    }
+
+    /**
+     * Resolves a branch name to its commit hash.
+     * Returns {@code null} if the branch does not exist.
+     */
+    public String resolveRef(String branchName) throws IOException {
+        Path refFile = blobvaultDir.resolve("refs").resolve("heads").resolve(branchName);
+        if (!Files.exists(refFile)) {
+            return null;
+        }
+        return Files.readString(refFile).trim();
     }
 }

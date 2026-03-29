@@ -20,6 +20,8 @@ public class Main {
         register(new StatusCommand());
         register(new CommitCommand());
         register(new LogCommand());
+        register(new BranchCommand());
+        register(new CheckoutCommand());
     }
 
     private static void register(Command cmd) {

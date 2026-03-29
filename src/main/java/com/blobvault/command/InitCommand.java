@@ -10,8 +10,8 @@ import java.nio.file.Path;
  *   .blobvault/
  *     objects/       <- where blobs, trees, commits are stored
  *     refs/
- *       heads/       <- branch pointers (used in Phase 5)
- *     HEAD           <- points to the current branch (used in Phase 5)
+ *       heads/       <- branch pointers
+ *     HEAD           <- points to the current branch
  */
 public class InitCommand implements Command {
 
