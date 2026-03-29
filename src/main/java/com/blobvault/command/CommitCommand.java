@@ -9,8 +9,11 @@ import com.blobvault.storage.Index;
 import com.blobvault.storage.IndexEntry;
 import com.blobvault.storage.RefManager;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -63,9 +66,9 @@ public class CommitCommand implements Command {
             return;
         }
 
-        // First commit has no parents; subsequent commits link back to HEAD
+        // Build parent list: normally just HEAD, but after a merge also includes MERGE_HEAD
         String parentHash = refs.resolveHead();
-        List<String> parents = (parentHash != null) ? List.of(parentHash) : List.of();
+        List<String> parents = buildParentList(cwd, parentHash);
 
         // Hardcoded identity — could read from a config file
         long timestamp = Instant.now().getEpochSecond();
@@ -79,7 +82,35 @@ public class CommitCommand implements Command {
         String currentRef = refs.readSymbolicRef();
         refs.updateRef(currentRef, commitHash);
 
+        // Clean up MERGE_HEAD if this was a merge commit
+        Path mergeHead = cwd.resolve(".blobvault").resolve("MERGE_HEAD");
+        if (Files.exists(mergeHead)) {
+            Files.delete(mergeHead);
+        }
+
         System.out.println(commitHash);
+    }
+
+    /**
+     * Builds the parent list for a new commit.
+     * If MERGE_HEAD exists (after a merge with conflicts was resolved), includes both
+     * HEAD and MERGE_HEAD as parents — creating a merge commit.
+     */
+    private List<String> buildParentList(Path cwd, String headHash) throws IOException {
+        List<String> parents = new ArrayList<>();
+        if (headHash != null) {
+            parents.add(headHash);
+        }
+
+        Path mergeHead = cwd.resolve(".blobvault").resolve("MERGE_HEAD");
+        if (Files.exists(mergeHead)) {
+            String mergeParent = Files.readString(mergeHead).trim();
+            if (!mergeParent.isEmpty()) {
+                parents.add(mergeParent);
+            }
+        }
+
+        return parents;
     }
 
     /**

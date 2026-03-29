@@ -23,6 +23,7 @@ public class Main {
         register(new BranchCommand());
         register(new CheckoutCommand());
         register(new DiffCommand());
+        register(new MergeCommand());
     }
 
     private static void register(Command cmd) {

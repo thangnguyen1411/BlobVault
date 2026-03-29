@@ -142,8 +142,7 @@ public class TreeWriter {
     private static void flattenTreeRecursive(String treeHash, String prefix,
                                               BlobStore store, Map<String, String> result)
             throws IOException {
-        byte[] treeData = store.read(treeHash);
-        List<TreeEntry> entries = TreeSerializer.deserialize(treeData);
+        List<TreeEntry> entries = TreeSerializer.deserialize(store.read(treeHash));
 
         for (TreeEntry entry : entries) {
             String fullPath = prefix.isEmpty() ? entry.name() : prefix + "/" + entry.name();

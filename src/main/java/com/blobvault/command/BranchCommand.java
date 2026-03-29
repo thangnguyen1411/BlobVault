@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 
 /**
@@ -129,15 +131,21 @@ public class BranchCommand implements Command {
     }
 
     /**
-     * Walks the first-parent chain from HEAD to check whether {@code targetHash} is reachable.
-     * A full DAG traversal would be needed once merge commits are supported.
+     * BFS traversal of the full commit DAG from HEAD to check whether {@code targetHash}
+     * is reachable. Follows all parents (not just first-parent) so merge commits are handled.
      */
     private boolean isReachableFromHead(String targetHash, RefManager refs,
                                         BlobStore store) throws IOException {
-        String current = refs.resolveHead();
-        Set<String> visited = new HashSet<>();
+        String head = refs.resolveHead();
+        if (head == null) return false;
 
-        while (current != null && visited.add(current)) {
+        Set<String> visited = new HashSet<>();
+        Queue<String> queue = new LinkedList<>();
+        queue.add(head);
+        visited.add(head);
+
+        while (!queue.isEmpty()) {
+            String current = queue.poll();
             if (current.equals(targetHash)) {
                 return true;
             }
@@ -145,10 +153,11 @@ public class BranchCommand implements Command {
             byte[] commitData = store.read(current);
             CommitObject commit = CommitSerializer.deserialize(commitData);
 
-            if (commit.parentHashes().isEmpty()) {
-                break;
+            for (String parent : commit.parentHashes()) {
+                if (visited.add(parent)) {
+                    queue.add(parent);
+                }
             }
-            current = commit.parentHashes().getFirst();
         }
 
         return false;
