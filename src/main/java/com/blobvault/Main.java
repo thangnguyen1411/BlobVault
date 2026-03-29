@@ -16,6 +16,8 @@ public class Main {
         register(new CatFileCommand());
         register(new WriteTreeCommand());
         register(new LsTreeCommand());
+        register(new AddCommand());
+        register(new StatusCommand());
         register(new CommitCommand());
         register(new LogCommand());
     }

@@ -50,6 +50,16 @@ public class BlobStore {
     }
 
     /**
+     * Computes the hash of content WITHOUT storing it.
+     * Used by StatusCommand to check if files have changed without side effects.
+     * Same algorithm as store(), just skips the write step.
+     */
+    public String hash(ObjectType type, byte[] content) {
+        byte[] wrapped = HashUtil.wrapWithHeader(type.label(), content);
+        return HashUtil.sha1(wrapped);
+    }
+
+    /**
      * Reads an object by hash and returns the raw content (without the header).
      */
     public byte[] read(String hash) throws IOException {

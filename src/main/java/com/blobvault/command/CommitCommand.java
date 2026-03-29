@@ -5,23 +5,27 @@ import com.blobvault.object.CommitSerializer;
 import com.blobvault.object.ObjectType;
 import com.blobvault.object.TreeWriter;
 import com.blobvault.storage.BlobStore;
+import com.blobvault.storage.Index;
+import com.blobvault.storage.IndexEntry;
 import com.blobvault.storage.RefManager;
 
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.TreeMap;
 
 /**
- * Creates a new commit from the current working directory state.
+ * Creates a new commit from the staged changes in the index.
  * Equivalent to: git commit -m "message"
  *
  * What happens when you run "blobvault commit -m 'Initial commit'":
  *
- *   1. Snapshot the working directory → tree hash   (TreeWriter)
- *   2. Read HEAD → find the parent commit           (RefManager)
- *   3. Build the commit object                      (CommitObject + CommitSerializer)
- *   4. Store it in the object store                  (BlobStore)
- *   5. Update the branch to point to this commit     (RefManager)
+ *   1. Read the index (staged files)                 (Index)
+ *   2. Build a tree from the index entries            (TreeWriter)
+ *   3. Read HEAD → find the parent commit             (RefManager)
+ *   4. Build the commit object                        (CommitObject + CommitSerializer)
+ *   5. Store it in the object store                   (BlobStore)
+ *   6. Update the branch to point to this commit      (RefManager)
  *
  * After this, .blobvault/refs/heads/main contains the new commit hash,
  * and the commit itself points back to the previous one — forming the history chain.
@@ -46,10 +50,19 @@ public class CommitCommand implements Command {
         BlobStore store = new BlobStore(cwd);
         RefManager refs = new RefManager(cwd);
 
-        // --- Step 1: Snapshot the working directory into a tree ---
-        String treeHash = TreeWriter.writeTree(cwd, store);
+        // --- Step 1: Read the index (what the user staged with "add") ---
+        Index index = new Index(cwd);
+        TreeMap<String, IndexEntry> entries = index.read();
+
+        if (entries.isEmpty()) {
+            System.err.println("Nothing to commit (empty index — use 'blobvault add' first)");
+            return;
+        }
+
+        // --- Step 2: Build a tree from the index entries ---
+        String treeHash = TreeWriter.buildTreeFromIndex(entries, store);
         if (treeHash == null) {
-            System.err.println("Nothing to commit (empty working directory)");
+            System.err.println("Nothing to commit (empty index)");
             return;
         }
 
