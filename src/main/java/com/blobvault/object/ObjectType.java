@@ -6,7 +6,8 @@ package com.blobvault.object;
  */
 public enum ObjectType {
     BLOB("blob"),
-    TREE("tree");
+    TREE("tree"),
+    COMMIT("commit");
 
     private final String label;
 
