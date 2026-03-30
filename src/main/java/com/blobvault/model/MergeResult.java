@@ -1,4 +1,4 @@
-package com.blobvault.merge;
+package com.blobvault.model;
 
 import java.util.List;
 

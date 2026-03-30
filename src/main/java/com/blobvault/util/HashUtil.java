@@ -1,4 +1,4 @@
-package com.blobvault.storage;
+package com.blobvault.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

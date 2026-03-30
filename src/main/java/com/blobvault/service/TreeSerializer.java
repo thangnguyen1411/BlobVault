@@ -1,4 +1,6 @@
-package com.blobvault.object;
+package com.blobvault.service;
+
+import com.blobvault.model.TreeEntry;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

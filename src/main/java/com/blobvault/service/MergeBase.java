@@ -1,7 +1,6 @@
-package com.blobvault.merge;
+package com.blobvault.service;
 
-import com.blobvault.object.CommitObject;
-import com.blobvault.object.CommitSerializer;
+import com.blobvault.model.CommitObject;
 import com.blobvault.storage.BlobStore;
 
 import java.io.IOException;

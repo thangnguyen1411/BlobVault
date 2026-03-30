@@ -1,8 +1,8 @@
 package com.blobvault.command;
 
 import com.blobvault.storage.BlobStore;
-import com.blobvault.object.TreeEntry;
-import com.blobvault.object.TreeSerializer;
+import com.blobvault.model.TreeEntry;
+import com.blobvault.service.TreeSerializer;
 
 import java.nio.file.Path;
 import java.util.List;

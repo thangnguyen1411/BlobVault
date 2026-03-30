@@ -1,4 +1,4 @@
-package com.blobvault.storage;
+package com.blobvault.model;
 
 /**
  * One entry in the index (staging area).

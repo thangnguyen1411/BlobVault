@@ -1,4 +1,4 @@
-package com.blobvault.object;
+package com.blobvault.model;
 
 import java.util.List;
 

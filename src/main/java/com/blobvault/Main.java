@@ -26,6 +26,7 @@ public class Main {
         register(new MergeCommand());
         register(new ResetCommand());
         register(new RmCommand());
+        register(new StashCommand());
     }
 
     private static void register(Command cmd) {

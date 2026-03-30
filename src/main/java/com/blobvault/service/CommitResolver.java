@@ -1,7 +1,8 @@
-package com.blobvault.storage;
+package com.blobvault.service;
 
-import com.blobvault.object.CommitObject;
-import com.blobvault.object.CommitSerializer;
+import com.blobvault.model.CommitObject;
+import com.blobvault.storage.BlobStore;
+import com.blobvault.storage.RefManager;
 
 import java.io.IOException;
 import java.util.regex.Matcher;

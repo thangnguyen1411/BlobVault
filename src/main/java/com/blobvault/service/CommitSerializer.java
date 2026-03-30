@@ -1,4 +1,6 @@
-package com.blobvault.object;
+package com.blobvault.service;
+
+import com.blobvault.model.CommitObject;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

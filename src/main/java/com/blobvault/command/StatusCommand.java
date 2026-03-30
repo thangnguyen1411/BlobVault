@@ -1,12 +1,12 @@
 package com.blobvault.command;
 
-import com.blobvault.object.CommitObject;
-import com.blobvault.object.CommitSerializer;
-import com.blobvault.object.ObjectType;
-import com.blobvault.object.TreeWriter;
+import com.blobvault.model.CommitObject;
+import com.blobvault.model.ObjectType;
+import com.blobvault.service.CommitSerializer;
+import com.blobvault.service.TreeWriter;
 import com.blobvault.storage.BlobStore;
 import com.blobvault.storage.Index;
-import com.blobvault.storage.IndexEntry;
+import com.blobvault.model.IndexEntry;
 import com.blobvault.storage.RefManager;
 
 import java.io.IOException;

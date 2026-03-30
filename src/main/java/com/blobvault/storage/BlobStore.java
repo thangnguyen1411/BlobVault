@@ -1,6 +1,7 @@
 package com.blobvault.storage;
 
-import com.blobvault.object.ObjectType;
+import com.blobvault.model.ObjectType;
+import com.blobvault.util.HashUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

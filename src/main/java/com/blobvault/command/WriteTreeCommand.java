@@ -1,6 +1,6 @@
 package com.blobvault.command;
 
-import com.blobvault.object.TreeWriter;
+import com.blobvault.service.TreeWriter;
 import com.blobvault.storage.BlobStore;
 
 import java.nio.file.Path;

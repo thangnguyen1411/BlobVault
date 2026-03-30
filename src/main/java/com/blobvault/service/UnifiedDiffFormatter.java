@@ -1,4 +1,6 @@
-package com.blobvault.diff;
+package com.blobvault.service;
+
+import com.blobvault.model.DiffHunk;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.blobvault.command;
 
-import com.blobvault.object.CommitObject;
-import com.blobvault.object.CommitSerializer;
+import com.blobvault.model.CommitObject;
+import com.blobvault.service.CommitSerializer;
 import com.blobvault.storage.BlobStore;
 import com.blobvault.storage.RefManager;
 

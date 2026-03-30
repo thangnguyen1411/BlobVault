@@ -1,7 +1,7 @@
-package com.blobvault.merge;
+package com.blobvault.service;
 
-import com.blobvault.diff.DiffEngine;
-import com.blobvault.diff.DiffHunk;
+import com.blobvault.model.DiffHunk;
+import com.blobvault.model.MergeResult;
 
 import java.util.ArrayList;
 import java.util.List;

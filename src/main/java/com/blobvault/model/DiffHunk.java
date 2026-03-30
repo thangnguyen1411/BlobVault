@@ -1,4 +1,4 @@
-package com.blobvault.diff;
+package com.blobvault.model;
 
 import java.util.List;
 

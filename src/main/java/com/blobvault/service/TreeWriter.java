@@ -1,7 +1,9 @@
-package com.blobvault.object;
+package com.blobvault.service;
 
+import com.blobvault.model.ObjectType;
+import com.blobvault.model.TreeEntry;
 import com.blobvault.storage.BlobStore;
-import com.blobvault.storage.IndexEntry;
+import com.blobvault.model.IndexEntry;
 
 import java.io.IOException;
 import java.nio.file.Files;
