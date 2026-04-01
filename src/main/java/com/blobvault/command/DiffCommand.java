@@ -4,6 +4,7 @@ import com.blobvault.model.CommitObject;
 import com.blobvault.model.DiffHunk;
 import com.blobvault.model.IndexEntry;
 import com.blobvault.model.ObjectType;
+import com.blobvault.service.CommitResolver;
 import com.blobvault.service.CommitSerializer;
 import com.blobvault.service.DiffEngine;
 import com.blobvault.service.TreeWriter;
@@ -48,8 +49,13 @@ public class DiffCommand implements Command {
         Index index = new Index(cwd);
 
         if (args.length >= 3) {
-            // diff <commit1> <commit2>
-            diffCommits(args[1], args[2], store);
+            // diff <commit1> <commit2> — resolve expressions (branch names, tags, HEAD~N)
+            CommitResolver resolver = new CommitResolver(refs, store);
+            String hashA = resolver.resolve(args[1]);
+            String hashB = resolver.resolve(args[2]);
+            if (hashA == null) { System.err.println("Could not resolve: " + args[1]); return; }
+            if (hashB == null) { System.err.println("Could not resolve: " + args[2]); return; }
+            diffCommits(hashA, hashB, store);
         } else if (args.length >= 2 && "--staged".equals(args[1])) {
             // diff --staged
             diffStaged(store, refs, index);

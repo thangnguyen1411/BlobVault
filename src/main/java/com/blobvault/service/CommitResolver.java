@@ -1,6 +1,7 @@
 package com.blobvault.service;
 
 import com.blobvault.model.CommitObject;
+import com.blobvault.model.TagObject;
 import com.blobvault.storage.BlobStore;
 import com.blobvault.storage.RefManager;
 
@@ -15,6 +16,7 @@ import java.util.regex.Pattern;
  *   "HEAD"          → current branch tip
  *   "HEAD~3"        → 3 first-parents back from HEAD
  *   "main"          → branch name → its tip commit
+ *   "v1.0"          → tag name → dereferenced to commit hash
  *   "abc123def..."  → raw 40-char hash (returned as-is)
  *
  * Used by ResetCommand and will be reused by future commands (rebase, cherry-pick, log).
@@ -60,7 +62,31 @@ public class CommitResolver {
         }
 
         // Branch name
-        return refs.resolveRef(expr);
+        String branchHash = refs.resolveRef(expr);
+        if (branchHash != null) {
+            return branchHash;
+        }
+
+        // Tag name — dereference annotated tags to get the underlying commit
+        String tagHash = refs.resolveTag(expr);
+        if (tagHash != null) {
+            return dereferenceTag(tagHash);
+        }
+
+        return null;
+    }
+
+    /**
+     * If the hash points to a tag object (annotated tag), follows it to the underlying commit.
+     * If it already points to a commit (lightweight tag), returns it as-is.
+     */
+    private String dereferenceTag(String hash) throws IOException {
+        String type = store.readType(hash);
+        if ("tag".equals(type)) {
+            TagObject tag = TagSerializer.deserialize(store.read(hash));
+            return tag.objectHash();
+        }
+        return hash;
     }
 
     /**

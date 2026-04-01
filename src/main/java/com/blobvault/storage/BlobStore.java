@@ -5,6 +5,7 @@ import com.blobvault.util.HashUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.DeflaterOutputStream;
@@ -77,6 +78,27 @@ public class BlobStore {
         byte[] content = new byte[decompressed.length - nullIndex - 1];
         System.arraycopy(decompressed, nullIndex + 1, content, 0, content.length);
         return content;
+    }
+
+    /**
+     * Reads the object type from the header without returning the full content.
+     * Parses just the header prefix (e.g., "blob", "tree", "commit", "tag").
+     */
+    public String readType(String hash) throws IOException {
+        Path objectPath = objectPath(hash);
+        if (!Files.exists(objectPath)) {
+            throw new IOException("Object not found: " + hash);
+        }
+
+        byte[] compressed = Files.readAllBytes(objectPath);
+        byte[] decompressed = decompress(compressed);
+
+        // Header format: "<type> <size>\0..." — extract the type before the first space
+        int spaceIndex = 0;
+        while (spaceIndex < decompressed.length && decompressed[spaceIndex] != ' ') {
+            spaceIndex++;
+        }
+        return new String(decompressed, 0, spaceIndex, StandardCharsets.UTF_8);
     }
 
     /**

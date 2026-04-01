@@ -12,6 +12,7 @@ import java.util.stream.Stream;
  * Layout:
  *   .blobvault/HEAD                → symbolic ref (e.g., "ref: refs/heads/main") or raw hash
  *   .blobvault/refs/heads/{name}   → commit hash for each branch
+ *   .blobvault/refs/tags/{name}    → commit or tag object hash for each tag
  */
 public class RefManager {
 
@@ -114,5 +115,56 @@ public class RefManager {
             return null;
         }
         return Files.readString(refFile).trim();
+    }
+
+    // --- Tag operations ---
+
+    /**
+     * Returns all tag names sorted alphabetically, or an empty list if none exist.
+     * Supports slash-namespaced tags (e.g., "release/v1.0").
+     */
+    public List<String> listTags() throws IOException {
+        Path tagsDir = blobvaultDir.resolve("refs").resolve("tags");
+        if (!Files.exists(tagsDir)) {
+            return List.of();
+        }
+
+        try (Stream<Path> entries = Files.walk(tagsDir)) {
+            return entries
+                    .filter(Files::isRegularFile)
+                    .map(p -> tagsDir.relativize(p).toString().replace('\\', '/'))
+                    .sorted()
+                    .toList();
+        }
+    }
+
+    /**
+     * Resolves a tag name to the hash it points to.
+     * For lightweight tags this is a commit hash; for annotated tags it's a tag object hash.
+     * Returns {@code null} if the tag does not exist.
+     */
+    public String resolveTag(String tagName) throws IOException {
+        Path refFile = blobvaultDir.resolve("refs").resolve("tags").resolve(tagName);
+        if (!Files.exists(refFile)) {
+            return null;
+        }
+        return Files.readString(refFile).trim();
+    }
+
+    /**
+     * Creates or updates a tag ref.
+     */
+    public void updateTag(String tagName, String hash) throws IOException {
+        Path refFile = blobvaultDir.resolve("refs").resolve("tags").resolve(tagName);
+        Files.createDirectories(refFile.getParent());
+        Files.writeString(refFile, hash + "\n");
+    }
+
+    /**
+     * Deletes a tag ref file.
+     */
+    public void deleteTag(String tagName) throws IOException {
+        Path refFile = blobvaultDir.resolve("refs").resolve("tags").resolve(tagName);
+        Files.delete(refFile);
     }
 }

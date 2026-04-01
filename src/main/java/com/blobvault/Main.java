@@ -27,6 +27,7 @@ public class Main {
         register(new ResetCommand());
         register(new RmCommand());
         register(new StashCommand());
+        register(new TagCommand());
     }
 
     private static void register(Command cmd) {
