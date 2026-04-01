@@ -167,4 +167,48 @@ public class RefManager {
         Path refFile = blobvaultDir.resolve("refs").resolve("tags").resolve(tagName);
         Files.delete(refFile);
     }
+
+    // --- State file helpers (CHERRY_PICK_HEAD, ORIG_HEAD, rebase-state/*) ---
+
+    /** Reads a state file from .blobvault/<name>. Returns null if it doesn't exist. */
+    public String readStateFile(String name) throws IOException {
+        Path file = blobvaultDir.resolve(name);
+        if (!Files.exists(file)) return null;
+        return Files.readString(file).trim();
+    }
+
+    /** Writes content to .blobvault/<name>, creating parent directories as needed. */
+    public void writeStateFile(String name, String content) throws IOException {
+        Path file = blobvaultDir.resolve(name);
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, content + "\n");
+    }
+
+    /** Deletes .blobvault/<name> if it exists. */
+    public void deleteStateFile(String name) throws IOException {
+        Files.deleteIfExists(blobvaultDir.resolve(name));
+    }
+
+    /** Returns true if HEAD is a raw hash (detached), false if it's a symbolic ref. */
+    public boolean isDetachedHead() throws IOException {
+        return !Files.readString(blobvaultDir.resolve("HEAD")).trim().startsWith("ref: ");
+    }
+
+    /** Points HEAD directly at a commit hash, detaching it from any branch. */
+    public void detachHead(String commitHash) throws IOException {
+        Files.writeString(blobvaultDir.resolve("HEAD"), commitHash + "\n");
+    }
+
+    /**
+     * Advances HEAD to the new commit hash, regardless of whether HEAD is
+     * symbolic (attached) or raw (detached). Used by CherryPicker and Rebase.
+     */
+    public void advanceHead(String commitHash) throws IOException {
+        String headContent = Files.readString(blobvaultDir.resolve("HEAD")).trim();
+        if (headContent.startsWith("ref: ")) {
+            updateRef(headContent.substring("ref: ".length()), commitHash);
+        } else {
+            detachHead(commitHash);
+        }
+    }
 }

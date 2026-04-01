@@ -142,6 +142,10 @@ public class ResetCommand implements Command {
             Files.delete(mergeHead);
         }
 
+        // Clean up CHERRY_PICK_HEAD/ORIG_HEAD if aborting an in-progress cherry-pick
+        refs.deleteStateFile("CHERRY_PICK_HEAD");
+        refs.deleteStateFile("ORIG_HEAD");
+
         System.out.println("HEAD is now at " + targetHash.substring(0, 7));
     }
 

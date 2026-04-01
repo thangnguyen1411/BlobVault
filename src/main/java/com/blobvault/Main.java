@@ -28,6 +28,8 @@ public class Main {
         register(new RmCommand());
         register(new StashCommand());
         register(new TagCommand());
+        register(new CherryPickCommand());
+        register(new RebaseCommand());
     }
 
     private static void register(Command cmd) {

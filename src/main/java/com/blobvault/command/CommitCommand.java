@@ -32,6 +32,10 @@ import java.util.TreeMap;
  * After this, the current branch file (e.g., .blobvault/refs/heads/main)
  * contains the new commit hash, and the commit itself points back to the
  * previous one — forming the history chain.
+ *
+ * Also handles committing after a cherry-pick conflict is resolved:
+ *   When CHERRY_PICK_HEAD is present and no -m is given, the message is
+ *   taken from the cherry-picked commit and the cherry-pick trailer is appended.
  */
 public class CommitCommand implements Command {
 
@@ -43,15 +47,16 @@ public class CommitCommand implements Command {
 
     @Override
     public void execute(Path cwd, String[] args) throws Exception {
-        String message = parseMessage(args);
+        BlobStore store = new BlobStore(cwd);
+        RefManager refs = new RefManager(cwd);
+        Index index = new Index(cwd);
+
+        String message = parseMessage(args, refs, store);
         if (message == null) {
             System.err.println("Usage: blobvault " + usage());
             return;
         }
 
-        BlobStore store = new BlobStore(cwd);
-        RefManager refs = new RefManager(cwd);
-        Index index = new Index(cwd);
         TreeMap<String, IndexEntry> entries = index.read();
 
         if (entries.isEmpty()) {
@@ -88,6 +93,10 @@ public class CommitCommand implements Command {
             Files.delete(mergeHead);
         }
 
+        // Clean up CHERRY_PICK_HEAD/ORIG_HEAD if this was a cherry-pick continuation
+        refs.deleteStateFile("CHERRY_PICK_HEAD");
+        refs.deleteStateFile("ORIG_HEAD");
+
         System.out.println(commitHash);
     }
 
@@ -114,15 +123,27 @@ public class CommitCommand implements Command {
     }
 
     /**
-     * Scans args for "-m" and returns the next argument as the commit message.
-     * Returns {@code null} if -m is missing or has no following argument.
+     * Determines the commit message.
+     *
+     * Priority:
+     *   1. -m flag in args
+     *   2. CHERRY_PICK_HEAD exists → use that commit's message + trailer
+     *   3. null → caller prints usage error
      */
-    private String parseMessage(String[] args) {
+    private String parseMessage(String[] args, RefManager refs, BlobStore store) throws IOException {
         for (int i = 0; i < args.length - 1; i++) {
             if ("-m".equals(args[i])) {
                 return args[i + 1];
             }
         }
+
+        // Fall back to CHERRY_PICK_HEAD message
+        String cherryPickHead = refs.readStateFile("CHERRY_PICK_HEAD");
+        if (cherryPickHead != null) {
+            CommitObject original = CommitSerializer.deserialize(store.read(cherryPickHead));
+            return original.message() + "\n\n(cherry picked from commit " + cherryPickHead + ")";
+        }
+
         return null;
     }
 }
